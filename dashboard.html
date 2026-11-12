@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OP Sniper</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='11' fill='none' stroke='%234E35A0' stroke-width='3'/><circle cx='16' cy='16' r='3.5' fill='%234E35A0'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&family=Unbounded:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  color-scheme: light;
+  --paper: #F4F3F8;
+  --surface: #FFFFFF;
+  --ink: #221A33;
+  --muted: #6E6884;
+  --line: #DEDAE8;
+  --plum: #4E35A0;
+  --plum-soft: #ECE7FA;
+  --on-plum: #FFFFFF;
+  --booked: #17734F;
+  --booked-soft: #E2F3EB;
+  --watch: #A34E12;
+  --watch-soft: #FBEBDD;
+  --bad: #A8243A;
+  --bad-soft: #FBE3E7;
+  --body: "Schibsted Grotesk", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --display: "Unbounded", "Arial Black", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --paper: #16121E;
+    --surface: #1F1A2A;
+    --ink: #ECE8F4;
+    --muted: #A49DB8;
+    --line: #332C42;
+    --plum: #A891F2;
+    --plum-soft: #2B2342;
+    --on-plum: #16121E;
+    --booked: #5CC79A;
+    --booked-soft: #173328;
+    --watch: #F0A06A;
+    --watch-soft: #3A2616;
+    --bad: #F28A9B;
+    --bad-soft: #3B1A21;
+  }
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font: 400 15px/1.5 var(--body); font-feature-settings: "tnum" 1;
+}
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--plum); outline-offset: 2px; border-radius: 6px; }
+.wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+
+/* top bar */
+.bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 0 8px; }
+.mark { display: flex; align-items: center; gap: 10px; font: 700 17px/1 var(--display); letter-spacing: -0.01em; }
+.mark svg { width: 22px; height: 22px; }
+.pill { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); font-size: 13px; color: var(--muted); }
+.pill i { width: 8px; height: 8px; border-radius: 50%; background: var(--booked); }
+.pill.off i { background: var(--bad); }
+.pill.dry i { background: var(--watch); }
+
+/* hero: the strike countdown */
+.hero { padding: 28px 0 36px; border-bottom: 1px solid var(--line); }
+.hero p { margin: 0; color: var(--muted); }
+.count { font: 700 clamp(56px, 11vw, 132px)/0.95 var(--display); letter-spacing: -0.04em; margin: 10px 0 14px; font-variant-numeric: tabular-nums; }
+.count small { font-size: 0.32em; letter-spacing: 0; color: var(--muted); font-weight: 500; margin-left: 0.3em; }
+.hero h1 { font: 600 20px/1.3 var(--body); margin: 0 0 4px; }
+.hero.idle .count { display: none; }
+.hero.idle h1 { font: 700 clamp(28px, 4vw, 40px)/1.1 var(--display); letter-spacing: -0.02em; margin: 10px 0 8px; }
+.banner { margin: 16px 0 0; padding: 12px 16px; border-radius: 10px; background: var(--bad-soft); color: var(--bad); font-weight: 500; }
+
+/* layout */
+.grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 40px; padding: 28px 0 64px; align-items: start; }
+h2 { font: 600 18px/1.3 var(--body); margin: 0 0 14px; }
+
+/* filters */
+.filters { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; }
+.filters select, .filters input { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; min-height: 42px; }
+.filters input { flex: 1 1 200px; }
+
+/* timetable */
+.day { margin: 26px 0 6px; font-weight: 600; color: var(--muted); font-size: 14px; }
+.day:first-child { margin-top: 0; }
+.cls { display: grid; grid-template-columns: 76px minmax(0, 1fr) auto; gap: 16px; align-items: center; padding: 14px 0; border-top: 1px solid var(--line); }
+.cls .time { font-weight: 600; font-size: 15px; white-space: nowrap; }
+.cls .name { font-weight: 600; }
+.cls .meta { color: var(--muted); font-size: 13px; margin-top: 2px; display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.spots { display: inline-flex; align-items: center; gap: 6px; }
+.spots b { display: inline-block; width: 44px; height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; position: relative; }
+.spots b span { position: absolute; inset: 0 auto 0 0; background: var(--muted); }
+.spots.full { color: var(--watch); }
+.actions { display: flex; gap: 8px; align-items: center; justify-content: flex-end; flex-wrap: wrap; }
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 7px 14px; cursor: pointer; font-weight: 500; font-size: 14px; white-space: nowrap; }
+.btn:hover { border-color: var(--muted); }
+.btn.go { background: var(--plum); border-color: var(--plum); color: var(--on-plum); }
+.btn.go:hover { filter: brightness(1.08); }
+.btn:disabled { opacity: 0.5; cursor: default; }
+.tag { font-size: 13px; font-weight: 600; padding: 4px 10px; border-radius: 999px; white-space: nowrap; }
+.tag.booked { background: var(--booked-soft); color: var(--booked); }
+.tag.armed, .tag.queued, .tag.weekly { background: var(--plum-soft); color: var(--plum); }
+.tag.watching, .tag.retry, .tag.full { background: var(--watch-soft); color: var(--watch); }
+.tag.bad { background: var(--bad-soft); color: var(--bad); }
+.tag.muted { background: transparent; color: var(--muted); padding-left: 0; font-weight: 500; }
+.empty { padding: 28px 0; color: var(--muted); border-top: 1px solid var(--line); }
+
+/* sidebar */
+aside section { margin-bottom: 34px; }
+.item { padding: 12px 0; border-top: 1px solid var(--line); }
+.item .row { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.item .label { font-weight: 500; }
+.item .sub { color: var(--muted); font-size: 13px; margin-top: 4px; }
+.x { border: 0; background: none; color: var(--muted); cursor: pointer; padding: 2px 4px; font-size: 13px; text-decoration: underline; text-underline-offset: 3px; }
+.x:hover { color: var(--bad); }
+.log { font-size: 12.5px; color: var(--muted); max-height: 260px; overflow: auto; border-top: 1px solid var(--line); padding-top: 10px; }
+.log div { padding: 2px 0; }
+.none { color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); padding-top: 12px; }
+
+/* toast */
+.toast { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); opacity: 0; background: var(--ink); color: var(--paper); padding: 11px 18px; border-radius: 10px; font-weight: 500; transition: opacity .2s, transform .2s; pointer-events: none; max-width: calc(100% - 32px); }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+.toast.err { background: var(--bad); color: #fff; }
+
+@media (max-width: 900px) {
+  .grid { grid-template-columns: 1fr; gap: 12px; }
+}
+@media (max-width: 560px) {
+  .wrap { padding: 0 16px; }
+  .cls { grid-template-columns: 64px minmax(0, 1fr); }
+  .cls .actions { grid-column: 2; justify-content: flex-start; }
+}
+@media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="bar">
+    <div class="mark">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="11" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="16" cy="16" r="3.5" fill="currentColor"/></svg>
+      OP Sniper
+    </div>
+    <span class="pill" id="pill"><i></i><span id="pillText">Connecting</span></span>
+  </header>
+
+  <section class="hero idle" id="hero" aria-live="polite">
+    <p id="heroLead">Next booking window</p>
+    <div class="count" id="count">--:--:--</div>
+    <h1 id="heroTitle">Nothing armed yet</h1>
+    <p id="heroSub">Pick a class below and press Snipe.</p>
+    <div class="banner" id="banner" hidden></div>
+  </section>
+
+  <div class="grid">
+    <main>
+      <h2>Timetable</h2>
+      <div class="filters">
+        <select id="loc" aria-label="Gym"></select>
+        <input id="search" type="search" placeholder="Class or instructor, e.g. reformer" aria-label="Search classes">
+        <select id="days" aria-label="How far ahead">
+          <option value="4">Next 4 days</option>
+          <option value="7">Next 7 days</option>
+          <option value="10">Next 10 days</option>
+        </select>
+      </div>
+      <div id="classes"><div class="empty">Loading the timetable</div></div>
+    </main>
+
+    <aside>
+      <section>
+        <h2>Your classes</h2>
+        <div id="targets"></div>
+      </section>
+      <section>
+        <h2>Every week</h2>
+        <div id="rules"></div>
+      </section>
+      <section>
+        <h2>Activity</h2>
+        <div class="log" id="log"></div>
+      </section>
+    </aside>
+  </div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+const TZ = 'Australia/Sydney';
+const WRITE = { 'X-OP-Sniper': '1', 'Content-Type': 'application/json' };
+const $ = id => document.getElementById(id);
+const store = {
+  get(k, d) { try { return localStorage.getItem('opsniper.' + k) ?? d; } catch { return d; } },
+  set(k, v) { try { localStorage.setItem('opsniper.' + k, v); } catch {} },
+};
+const dayFmt = new Intl.DateTimeFormat('en-AU', { weekday: 'long', day: 'numeric', month: 'long', timeZone: TZ });
+const shortFmt = new Intl.DateTimeFormat('en-AU', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', timeZone: TZ });
+const secFmt = new Intl.DateTimeFormat('en-AU', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', second: '2-digit', timeZone: TZ });
+const timeFmt = new Intl.DateTimeFormat('en-AU', { hour: 'numeric', minute: '2-digit', timeZone: TZ });
+const dayKey = d => new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(d);
+
+let status = null, classes = [], skew = 0;
+const nowMs = () => Date.now() + skew;
+
+function el(tag, attrs = {}, ...kids) {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === 'class') n.className = v;
+    else if (k.startsWith('on')) n.addEventListener(k.slice(2), v);
+    else if (v !== false && v != null) n.setAttribute(k, v === true ? '' : v);
+  }
+  for (const kid of kids.flat()) if (kid != null && kid !== false) n.append(kid);
+  return n;
+}
+
+let toastTimer;
+function toast(msg, err = false) {
+  const t = $('toast');
+  t.textContent = msg; t.className = 'toast show' + (err ? ' err' : '');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.className = 'toast', 3200);
+}
+
+async function api(path, opts = {}) {
+  const res = await fetch(path, opts);
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(body.error || `Something went wrong (${res.status}).`);
+  return body;
+}
+
+function until(ms) {
+  if (ms <= 0) return 'now';
+  const m = Math.round(ms / 60000);
+  if (m < 60) return `in ${m} min`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `in ${h}h ${m % 60}m`;
+  return `in ${Math.floor(h / 24)}d ${h % 24}h`;
+}
+
+const STATUS = {
+  armed: ['Armed', 'armed'], striking: ['Firing at window open', 'armed'], queued: ['Waiting for timetable', 'queued'], booked: ['Booked', 'booked'],
+  watching: ['Watching for a spot', 'watching'], retry: ['Trying again', 'retry'], full: ['Missed, class full', 'full'],
+  unsure: ['Check the OP app', 'bad'], expired: ['Too close to book', 'muted'], gave_up: ['Gave up after 5 tries', 'bad'],
+  dry_run: ['Dry run done', 'muted'], cancelled: ['Cancelled by OP', 'muted'], weekly: ['Weekly', 'weekly'],
+};
+const tag = s => { const [t, c] = STATUS[s] || [s || 'Queued', 'queued']; return el('span', { class: 'tag ' + c }, t); };
+
+/* ---------- actions ---------- */
+async function act(promise, after) {
+  try { const r = await promise; toast(r.message || 'Done.'); }
+  catch (e) { toast(e.message, true); }
+  await Promise.all([loadStatus(), after ? loadClasses() : null]);
+}
+const snipe = id => act(api('/api/queue', { method: 'POST', headers: WRITE, body: JSON.stringify({ booking_id: id, watch: true }) }), true);
+const weekly = id => act(api('/api/rules', { method: 'POST', headers: WRITE, body: JSON.stringify({ booking_id: id }) }), true);
+const unqueue = id => act(api('/api/queue/' + encodeURIComponent(id), { method: 'DELETE', headers: WRITE }), true);
+const unrule = i => act(api('/api/rules/' + i, { method: 'DELETE', headers: WRITE }), true);
+
+/* ---------- timetable ---------- */
+function renderClasses() {
+  const box = $('classes');
+  box.replaceChildren();
+  if (!classes.length) {
+    box.append(el('div', { class: 'empty' }, $('search').value ? 'No classes match that search. Try a shorter word or more days.' : 'No classes in this range.'));
+    return;
+  }
+  const lead = (status?.min_lead_hours ?? 30) * 3600e3;
+  let last = '';
+  for (const c of classes) {
+    const start = new Date(c.start), opens = new Date(c.opens);
+    const key = dayKey(start);
+    if (key !== last) { box.append(el('div', { class: 'day' }, dayFmt.format(start))); last = key; }
+    const full = (c.spots ?? 0) <= 0;
+    const pct = c.capacity ? Math.max(0, Math.min(100, 100 * (c.capacity - (c.spots ?? 0)) / c.capacity)) : 0;
+    const spots = el('span', { class: 'spots' + (full ? ' full' : '') },
+      el('b', {}, el('span', { style: `width:${pct}%` })),
+      full ? 'Full' : `${c.spots} of ${c.capacity} left`);
+    const isOpen = opens.getTime() <= nowMs();
+    const when = el('span', {}, isOpen ? 'Booking open' : `Opens ${until(opens - nowMs())}`);
+
+    const actions = el('div', { class: 'actions' });
+    if (c.status === 'booked') actions.append(tag('booked'));
+    else if (c.queued) {
+      actions.append(tag(c.status === 'armed' ? 'armed' : (c.status || 'queued')),
+        el('button', { class: 'btn', onclick: () => unqueue(c.booking_id) }, 'Cancel snipe'));
+    } else if (start - nowMs() < lead) {
+      actions.append(el('span', { class: 'tag muted', title: 'Too close to class time to auto-book without risking the late-cancel fee.' }, 'Book in the OP app'));
+    } else {
+      actions.append(el('button', { class: 'btn go', onclick: () => snipe(c.booking_id) }, isOpen ? (full ? 'Watch for a spot' : 'Book now') : 'Snipe'));
+    }
+    if (c.weekly) actions.append(tag('weekly'));
+    else if (c.status !== 'booked' && start - nowMs() >= lead) actions.append(el('button', { class: 'btn', onclick: () => weekly(c.booking_id) }, 'Every week'));
+
+    box.append(el('div', { class: 'cls' },
+      el('div', { class: 'time' }, timeFmt.format(start)),
+      el('div', {},
+        el('div', { class: 'name' }, c.name),
+        el('div', { class: 'meta' },
+          c.instructor ? el('span', {}, c.instructor) : null,
+          $('loc').value ? null : el('span', {}, c.location),
+          spots, when)),
+      actions));
+  }
+}
+
+let loadSeq = 0;
+async function loadClasses() {
+  const seq = ++loadSeq;
+  const q = new URLSearchParams({ days: $('days').value });
+  if ($('loc').value) q.set('location', $('loc').value);
+  if ($('search').value.trim()) q.set('search', $('search').value.trim());
+  try {
+    const rows = await api('/api/classes?' + q);
+    if (seq !== loadSeq) return;
+    classes = rows; renderClasses();
+  } catch (e) {
+    if (seq === loadSeq) $('classes').replaceChildren(el('div', { class: 'empty' }, e.message));
+  }
+}
+
+/* ---------- status, sidebar, hero ---------- */
+function renderStatus() {
+  const s = status;
+  const pill = $('pill'), txt = $('pillText');
+  if (!s) { pill.className = 'pill off'; txt.textContent = 'Not running'; return; }
+  pill.className = 'pill' + (s.error ? ' off' : s.dry_run ? ' dry' : '');
+  txt.textContent = s.error ? 'Stopped' : s.dry_run ? 'Dry run, nothing will book' : 'Running';
+
+  const banner = $('banner');
+  banner.hidden = !s.error;
+  banner.textContent = s.error ? `${s.error} Fix it, then restart with: py -3.12 opsniper.py web` : '';
+
+  // sidebar: your classes
+  const t = $('targets'); t.replaceChildren();
+  const live = s.targets.filter(x => new Date(x.start) > nowMs() - 3 * 86400e3);
+  if (!live.length) t.append(el('div', { class: 'none' }, 'Nothing yet. Snipe a class from the timetable.'));
+  for (const x of live) {
+    const opens = new Date(x.opens);
+    const sub = ['armed', 'queued', 'striking'].includes(x.status)
+      ? `Window opens ${shortFmt.format(opens)}`
+      : x.detail;
+    t.append(el('div', { class: 'item' },
+      el('div', { class: 'row' }, el('div', { class: 'label' }, x.label), tag(x.status)),
+      sub ? el('div', { class: 'sub' }, sub) : null,
+      x.kind === 'one-off' && !['booked', 'unsure'].includes(x.status)
+        ? el('button', { class: 'x', onclick: () => unqueue(x.booking_id) }, 'Remove') : null));
+  }
+
+  // sidebar: weekly rules
+  const r = $('rules'); r.replaceChildren();
+  if (!s.rules.length) r.append(el('div', { class: 'none' }, 'Press Every week on a class to book it automatically each week.'));
+  for (const rule of s.rules) {
+    r.append(el('div', { class: 'item' },
+      el('div', { class: 'row' },
+        el('div', { class: 'label' }, `${rule.class}, ${rule.location}`),
+        el('button', { class: 'x', onclick: () => unrule(rule.index) }, 'Remove')),
+      el('div', { class: 'sub' }, `${rule.day} at ${rule.time}${rule.instructor ? ` with ${rule.instructor}` : ''}`)));
+  }
+
+  // activity
+  const log = $('log'); log.replaceChildren();
+  const lines = s.log.slice().reverse();
+  if (!lines.length) log.append(el('div', {}, 'Quiet so far.'));
+  for (const line of lines) log.append(el('div', {}, line));
+}
+
+function renderHero() {
+  const s = status;
+  const next = (s?.targets || [])
+    .filter(x => ['armed', 'queued', 'striking'].includes(x.status) && new Date(x.opens) > nowMs() - 5000)
+    .sort((a, b) => new Date(a.opens) - new Date(b.opens))[0];
+  const hero = $('hero');
+  if (!next) {
+    hero.classList.add('idle');
+    $('count').textContent = '--:--:--';
+    $('heroLead').textContent = 'Next booking window';
+    $('heroTitle').textContent = 'Nothing armed yet';
+    $('heroSub').textContent = 'Pick a class below and press Snipe.';
+    return;
+  }
+  hero.classList.remove('idle');
+  const ms = Math.max(0, new Date(next.opens) - nowMs());
+  const sec = Math.floor(ms / 1000);
+  const hh = Math.floor(sec / 3600), mm = Math.floor(sec % 3600 / 60), ss = sec % 60;
+  const pad = n => String(n).padStart(2, '0');
+  $('count').replaceChildren(ms > 0 ? `${hh}:${pad(mm)}:${pad(ss)}` : 'Booking', ms > 0 ? el('small', {}, 'to go') : null);
+  $('heroTitle').textContent = next.label;
+  $('heroSub').textContent = `Window opens ${secFmt.format(new Date(next.opens))}. Keep this computer on until then.`;
+}
+
+async function loadStatus() {
+  try {
+    status = await api('/api/status');
+    skew = new Date(status.now) - Date.now();
+  } catch {
+    status = null;
+    $('banner').hidden = false;
+    $('banner').textContent = "Can't reach the sniper. Start it again with: py -3.12 opsniper.py web";
+  }
+  renderStatus(); renderHero();
+}
+
+/* ---------- boot ---------- */
+async function boot() {
+  $('days').value = store.get('days', '7');
+  $('search').value = store.get('search', 'reformer');
+  try {
+    const centers = await api('/api/centers');
+    $('loc').replaceChildren(el('option', { value: '' }, 'All gyms'), ...centers.map(c => el('option', { value: c }, c)));
+    const saved = store.get('loc', null);
+    $('loc').value = saved !== null ? saved : (centers.includes('Zetland') ? 'Zetland' : '');
+  } catch (e) { toast(e.message, true); }
+
+  let debounce;
+  $('search').addEventListener('input', () => { store.set('search', $('search').value); clearTimeout(debounce); debounce = setTimeout(loadClasses, 300); });
+  $('loc').addEventListener('change', () => { store.set('loc', $('loc').value); loadClasses(); });
+  $('days').addEventListener('change', () => { store.set('days', $('days').value); loadClasses(); });
+
+  await loadStatus();
+  await loadClasses();
+  setInterval(loadStatus, 4000);
+  setInterval(loadClasses, 60000);
+  setInterval(renderHero, 1000);
+}
+boot();
+</script>
+</body>
+</html>

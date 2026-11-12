@@ -1,0 +1,532 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>OP Sniper</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='11' fill='none' stroke='%234E35A0' stroke-width='3'/><circle cx='16' cy='16' r='3.5' fill='%234E35A0'/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700&family=Unbounded:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  color-scheme: light;
+  --paper: #F4F3F8; --surface: #FFFFFF; --ink: #221A33; --muted: #6E6884; --line: #DEDAE8;
+  --plum: #4E35A0; --plum-soft: #ECE7FA; --on-plum: #FFFFFF;
+  --booked: #17734F; --booked-soft: #E2F3EB; --watch: #A34E12; --watch-soft: #FBEBDD; --bad: #A8243A; --bad-soft: #FBE3E7;
+  --body: "Schibsted Grotesk", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --display: "Unbounded", "Arial Black", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --paper: #16121E; --surface: #1F1A2A; --ink: #ECE8F4; --muted: #A49DB8; --line: #332C42;
+    --plum: #A891F2; --plum-soft: #2B2342; --on-plum: #16121E;
+    --booked: #5CC79A; --booked-soft: #173328; --watch: #F0A06A; --watch-soft: #3A2616; --bad: #F28A9B; --bad-soft: #3B1A21;
+  }
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 400 16px/1.5 var(--body); font-feature-settings: "tnum" 1; }
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--plum); outline-offset: 2px; border-radius: 8px; }
+.wrap { max-width: 720px; margin: 0 auto; padding: 0 20px 80px; }
+
+/* top */
+.bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 0 6px; }
+.mark { display: flex; align-items: center; gap: 9px; font: 700 17px/1 var(--display); white-space: nowrap; }
+.mark svg { width: 22px; height: 22px; }
+.pill { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); font-size: 13px; color: var(--muted); white-space: nowrap; }
+.pill i { width: 8px; height: 8px; border-radius: 50%; background: var(--booked); }
+.pill.off i { background: var(--bad); } .pill.warn i { background: var(--watch); }
+.banner { margin: 14px 0 0; padding: 12px 16px; border-radius: 12px; background: var(--bad-soft); color: var(--bad); font-weight: 500; }
+
+/* countdown: the one loud thing */
+.hero { padding: 26px 0 30px; }
+.hero p { margin: 0; color: var(--muted); }
+.count { font: 700 clamp(54px, 15vw, 112px)/0.95 var(--display); letter-spacing: -0.04em; margin: 8px 0 12px; font-variant-numeric: tabular-nums; }
+.count small { font-size: 0.3em; letter-spacing: 0; color: var(--muted); font-weight: 500; margin-left: 0.3em; }
+.hero h1 { font: 600 19px/1.3 var(--body); margin: 0 0 2px; }
+
+section.block { padding: 26px 0 8px; border-top: 1px solid var(--line); }
+.hero + section.block, .bar + section.block { border-top: 0; }
+h2 { font: 600 20px/1.25 var(--body); margin: 0 0 14px; }
+
+/* my classes */
+.mine { display: grid; gap: 10px; }
+.card { display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 14px; align-items: center; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; }
+.when { text-align: center; line-height: 1.15; }
+.when b { display: block; font: 700 20px/1.05 var(--display); letter-spacing: -0.02em; }
+.when span { font-size: 13px; color: var(--muted); }
+.card .name { font-weight: 600; }
+.card .sub { font-size: 14px; color: var(--muted); }
+.state { font-size: 14px; font-weight: 600; }
+.state.ok { color: var(--booked); } .state.wait { color: var(--plum); } .state.warn { color: var(--watch); } .state.bad { color: var(--bad); } .state.quiet { color: var(--muted); font-weight: 500; }
+.none { color: var(--muted); padding: 4px 0 8px; }
+
+/* pickers */
+.pickrow { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+select { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 9px 12px; min-height: 44px; }
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 8px 14px; min-height: 40px; cursor: pointer; font-weight: 500; font-size: 15px; }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+.days { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 12px; margin: 0 -2px 6px; scroll-snap-type: x proximity; scrollbar-width: thin; }
+.day { flex: 0 0 auto; width: 62px; scroll-snap-align: start; border: 1px solid var(--line); background: var(--surface); border-radius: 14px; padding: 8px 0 7px; cursor: pointer; text-align: center; line-height: 1.15; position: relative; }
+.day span { display: block; font-size: 13px; color: var(--muted); }
+.day b { display: block; font: 700 19px/1.2 var(--display); }
+.day[aria-pressed="true"] { background: var(--plum); border-color: var(--plum); color: var(--on-plum); }
+.day[aria-pressed="true"] span { color: var(--on-plum); opacity: .85; }
+.day.has::after { content: ""; position: absolute; left: 50%; bottom: 5px; width: 5px; height: 5px; margin-left: -2.5px; border-radius: 50%; background: var(--booked); }
+.day.empty-day b { opacity: .45; }
+
+/* class list */
+.cls { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 4px 14px; padding: 15px 0; border-top: 1px solid var(--line); }
+.cls .time { font-weight: 700; white-space: nowrap; }
+.cls .name { font-weight: 600; }
+.cls .meta { color: var(--muted); font-size: 14px; }
+.cls .meta .full { color: var(--watch); font-weight: 600; }
+.cls .do { grid-column: 2; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-top: 8px; }
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 9px 18px; min-height: 42px; cursor: pointer; font-weight: 600; font-size: 15px; white-space: nowrap; }
+.btn.go { background: var(--plum); border-color: var(--plum); color: var(--on-plum); }
+.btn.go:hover { filter: brightness(1.08); }
+.hint { font-size: 13px; color: var(--muted); }
+.link { border: 0; background: none; color: var(--muted); cursor: pointer; padding: 4px; font-size: 14px; text-decoration: underline; text-underline-offset: 3px; }
+.link:hover { color: var(--bad); }
+.toggle { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; user-select: none; }
+.toggle input { appearance: none; width: 38px; height: 22px; border-radius: 999px; background: var(--line); position: relative; cursor: pointer; margin: 0; transition: background .15s; }
+.toggle input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: var(--surface); transition: transform .15s; }
+.toggle input:checked { background: var(--plum); }
+.toggle input:checked::after { transform: translateX(16px); }
+.empty { color: var(--muted); padding: 18px 0; border-top: 1px solid var(--line); }
+
+/* weekly + details */
+.rule { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); }
+.rule .sub { color: var(--muted); font-size: 14px; }
+details { padding: 22px 0 0; border-top: 1px solid var(--line); }
+summary { cursor: pointer; font-weight: 600; color: var(--muted); }
+.detailbox { padding-top: 14px; display: grid; gap: 14px; }
+.log { font-size: 12.5px; color: var(--muted); max-height: 260px; overflow: auto; }
+.log div { padding: 2px 0; }
+
+/* unlock */
+.unlock { max-width: 460px; margin: 12vh auto 0; }
+.unlock h1 { font: 700 clamp(30px, 7vw, 44px)/1.05 var(--display); letter-spacing: -0.02em; margin: 0 0 14px; }
+.unlock p { color: var(--muted); margin: 0 0 18px; }
+.unlock form { display: flex; gap: 10px; flex-wrap: wrap; }
+.unlock input { flex: 1 1 240px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; min-height: 46px; }
+
+.toast { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); opacity: 0; background: var(--ink); color: var(--paper); padding: 12px 18px; border-radius: 12px; font-weight: 500; transition: opacity .2s, transform .2s; pointer-events: none; max-width: calc(100% - 32px); }
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+.toast.err { background: var(--bad); color: #fff; }
+@media (max-width: 420px) { .wrap { padding: 0 16px 80px; } .card { grid-template-columns: 54px minmax(0, 1fr); } .card > :last-child { grid-column: 2; justify-self: start; } .cls { grid-template-columns: 74px minmax(0, 1fr); } .cls .time { font-size: 15px; } }
+@media (prefers-reduced-motion: reduce) { .toast, .toggle input, .toggle input::after { transition: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="bar">
+    <div class="mark"><svg viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="11" fill="none" stroke="currentColor" stroke-width="3"/><circle cx="16" cy="16" r="3.5" fill="currentColor"/></svg>OP Sniper</div>
+    <span class="pill" id="pill" hidden><i></i><span id="pillText">Loading</span></span>
+  </header>
+
+  <section class="unlock" id="unlock" hidden>
+    <h1>Unlock your sniper</h1>
+    <p>Paste the GitHub key you made during setup. It stays on this device, so you only do this once per phone or computer.</p>
+    <form id="unlockForm">
+      <input id="tokenInput" type="password" autocomplete="off" placeholder="github_pat_..." aria-label="GitHub key">
+      <button class="btn go" type="submit">Unlock</button>
+    </form>
+    <p id="unlockErr" class="banner" hidden></p>
+  </section>
+
+  <div id="app" hidden>
+    <div class="banner" id="banner" hidden></div>
+
+    <section class="hero" id="hero" aria-live="polite" hidden>
+      <p>Next booking happens in</p>
+      <div class="count" id="count"></div>
+      <h1 id="heroTitle"></h1>
+      <p id="heroSub"></p>
+    </section>
+
+    <section class="block">
+      <h2>My classes</h2>
+      <div class="mine" id="mine"></div>
+    </section>
+
+    <section class="block">
+      <h2>Book a class</h2>
+      <div class="pickrow">
+        <select id="gym" aria-label="Gym"></select>
+        <div class="chips" id="types" role="group" aria-label="Class type"></div>
+      </div>
+      <div class="days" id="days" role="group" aria-label="Day"></div>
+      <div id="classes"></div>
+    </section>
+
+    <section class="block" id="weeklyBlock">
+      <h2>Every week</h2>
+      <div id="rules"></div>
+    </section>
+
+    <details>
+      <summary>Activity and settings</summary>
+      <div class="detailbox">
+        <div><button class="btn" id="checkNow">Check for changes now</button></div>
+        <div class="log" id="log"></div>
+        <div><button class="link" id="forget">Lock this device</button></div>
+      </div>
+    </details>
+  </div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+const TZ = 'Australia/Sydney';
+const GYMS = ['Bunker', 'Chatswood', 'Haymarket', 'Marrickville', 'Merrylands', 'Newtown', 'North Sydney', 'Rockdale', 'Surry Hills', 'Zetland'];
+const MIN_LEAD_H = 30, STAY_MIN = 75, H72 = 72 * 3600e3, DAYS_AHEAD = 14;
+const $ = id => document.getElementById(id);
+const store = {
+  get(k, d) { try { return localStorage.getItem('opsniper.' + k) ?? d; } catch { return d; } },
+  set(k, v) { try { v == null ? localStorage.removeItem('opsniper.' + k) : localStorage.setItem('opsniper.' + k, v); } catch {} },
+};
+const params = new URLSearchParams(location.search);
+const REPO = params.get('repo') || (location.hostname.endsWith('.github.io')
+  ? `${location.hostname.split('.')[0]}/${location.pathname.split('/').filter(Boolean)[0]}` : null);
+const API = params.get('api') || 'https://api.github.com';
+
+const F = o => new Intl.DateTimeFormat('en-AU', { timeZone: TZ, ...o });
+const fDay = F({ weekday: 'long', day: 'numeric', month: 'long' });
+const fWhen = F({ weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+const fWhenSec = F({ weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', second: '2-digit' });
+const fTime = F({ hour: 'numeric', minute: '2-digit' });
+const fWk = F({ weekday: 'short' }), fDate = F({ day: 'numeric' });
+const dayKey = d => new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(d);
+const partsOf = d => Object.fromEntries(new Intl.DateTimeFormat('en-US', { timeZone: TZ, weekday: 'short', hour: 'numeric', minute: '2-digit', hourCycle: 'h12' }).formatToParts(d).map(p => [p.type, p.value]));
+const naiveOf = d => dayKey(d) + ' ' + new Intl.DateTimeFormat('en-GB', { timeZone: TZ, hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' }).format(d);
+function fromNaive(n) {
+  for (const off of ['+11:00', '+10:00']) { const d = new Date(n.replace(' ', 'T') + off); if (naiveOf(d) === n.slice(0, 19)) return d; }
+  return new Date(n.replace(' ', 'T') + '+10:00');
+}
+function friendlyDay(d) {
+  const k = dayKey(d), today = dayKey(new Date()), tmr = dayKey(new Date(Date.now() + 86400e3));
+  return k === today ? 'today' : k === tmr ? 'tomorrow' : fWk.format(d) + ' ' + fDate.format(d);
+}
+const whenText = d => `${friendlyDay(d)} at ${fTime.format(d)}`;
+
+let token = store.get('token', null);
+let plan = { gyms: ['Zetland'], queue: [], rules: [] }, tt = { rows: [], gyms: [] }, st = { state: {}, log: [] };
+let pickedDay = null, pickedType = store.get('type', 'Reformer');
+
+function el(tag, attrs = {}, ...kids) {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === 'class') n.className = v;
+    else if (k.startsWith('on')) n.addEventListener(k.slice(2), v);
+    else if (k === 'checked') n.checked = v;
+    else if (v !== false && v != null) n.setAttribute(k, v === true ? '' : v);
+  }
+  for (const kid of kids.flat()) if (kid != null && kid !== false) n.append(kid);
+  return n;
+}
+let toastTimer;
+function toast(msg, err = false) {
+  const t = $('toast'); t.textContent = msg; t.className = 'toast show' + (err ? ' err' : '');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.className = 'toast', 3600);
+}
+function ago(ms) { const m = Math.round(ms / 60000); return m < 1 ? 'just now' : m < 60 ? `${m} min ago` : `${Math.floor(m / 60)}h ${m % 60}m ago`; }
+
+/* ---------- GitHub storage ---------- */
+class AuthErr extends Error {}
+async function gh(path, opts = {}) {
+  const res = await fetch(`${API}/repos/${REPO}${path}`, { ...opts, headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', ...(opts.body ? { 'Content-Type': 'application/json' } : {}) } });
+  if (res.status === 401 || res.status === 403) throw new AuthErr('GitHub turned that key down. Check it has Variables and Actions read and write for this repo, and hasn’t expired.');
+  return res;
+}
+async function getVar(name, fallback) {
+  const res = await gh(`/actions/variables/${name}`);
+  if (res.status === 404) return fallback;
+  if (!res.ok) throw new Error(`Couldn’t load ${name} (${res.status}).`);
+  try { return JSON.parse((await res.json()).value); } catch { return fallback; }
+}
+async function putVar(name, obj) {
+  const value = JSON.stringify(obj);
+  let res = await gh(`/actions/variables/${name}`, { method: 'PATCH', body: JSON.stringify({ name, value }) });
+  if (res.status === 404) res = await gh('/actions/variables', { method: 'POST', body: JSON.stringify({ name, value }) });
+  if (!res.ok) throw new Error(`Couldn’t save (${res.status}).`);
+}
+async function runNow(quiet) {
+  const res = await gh('/actions/workflows/sniper.yml/dispatches', { method: 'POST', body: JSON.stringify({ ref: 'main' }) });
+  if (!res.ok && !quiet) throw new Error(`Couldn’t start a check (${res.status}). Is the workflow switched on in the Actions tab?`);
+}
+async function editPlan(change) {
+  const fresh = await getVar('OP_PLAN', {});
+  fresh.queue ||= []; fresh.rules ||= []; fresh.gyms ||= ['Zetland'];
+  const msg = change(fresh);
+  fresh.queue = fresh.queue.filter(q => fromNaive(q.start) > Date.now());
+  await putVar('OP_PLAN', fresh);
+  plan = fresh;
+  return msg;
+}
+
+/* ---------- class helpers ---------- */
+const toCls = r => ({ id: r[0], start: new Date(r[1]), naive: naiveOf(new Date(r[1])), name: r[2], group: r[3], instructor: r[4], location: r[5], spots: r[6], capacity: r[7] });
+const labelOf = c => `${c.name}${c.instructor ? ` with ${c.instructor}` : ''}, ${c.location}, ${fWhen.format(c.start)}`;
+function parseTime(t) {
+  const m = String(t).trim().match(/^(\d{1,2})(?:[:.](\d{2}))?\s*([ap])?\.?\s*m?\.?$/i);
+  if (!m) return null;
+  let h = +m[1]; const ap = (m[3] || '').toLowerCase();
+  if (ap) h = h % 12 + (ap === 'p' ? 12 : 0);
+  return [h, +(m[2] || 0)];
+}
+function matchesRule(rule, c) {
+  const p = partsOf(c.start), hm = parseTime(rule.time) || [-1, -1];
+  const h24 = (+p.hour % 12) + (p.dayPeriod === 'PM' ? 12 : 0);
+  return rule.location.toLowerCase() === c.location.toLowerCase()
+    && rule.day.slice(0, 3).toLowerCase() === p.weekday.slice(0, 3).toLowerCase()
+    && hm[0] === h24 && hm[1] === +p.minute
+    && `${c.name} ${c.group}`.toLowerCase().includes(rule.class.toLowerCase())
+    && (!rule.instructor || (c.instructor || '').toLowerCase().includes(rule.instructor.toLowerCase()));
+}
+const ruleIndexFor = c => (plan.rules || []).findIndex(r => matchesRule(r, c));
+const FINAL = ['booked', 'dry_run', 'unsure', 'full', 'cancelled', 'expired', 'gave_up'];
+const statusOf = id => (st.state || {})[id]?.status;
+const classes = () => (tt.rows || []).map(toCls);
+
+// What a class's state means, in plain words.
+function describe(status, start, detail) {
+  const opens = new Date(start - H72);
+  switch (status) {
+    case 'booked': return ['Booked', 'ok'];
+    case 'striking': return ['Booking right now', 'wait'];
+    case 'watching': return ['Class was full. Watching for a spot.', 'warn'];
+    case 'retry': return ['Didn’t go through. Trying again.', 'warn'];
+    case 'full': return ['Missed it, the class filled up', 'warn'];
+    case 'unsure': return ['Not sure it booked. Check the OP app.', 'bad'];
+    case 'gave_up': return ['Couldn’t book after 5 tries', 'bad'];
+    case 'expired': return ['Too close to class time to book', 'quiet'];
+    case 'cancelled': return ['OP cancelled this class', 'quiet'];
+    case 'dry_run': return ['Test run only, not booked', 'quiet'];
+    default: return opens <= Date.now()
+      ? ['Books on the next check, within 15 minutes', 'wait']
+      : [`Books itself ${whenText(opens)}`, 'wait'];
+  }
+}
+
+/* ---------- actions ---------- */
+async function act(fn) {
+  try { const m = await fn(); if (m) toast(m); }
+  catch (e) { toast(e.message, true); if (e instanceof AuthErr) lock(e.message); }
+  render();
+}
+const book = c => act(async () => {
+  const msg = await editPlan(p => {
+    p.queue = p.queue.filter(q => q.booking_id !== c.id);
+    p.queue.push({ booking_id: c.id, location: c.location, start: c.naive, label: labelOf(c), watch: true });
+    const opens = new Date(c.start - H72);
+    return opens <= Date.now() ? `Booking ${c.name} on the next check.` : `Set. ${c.name} books itself ${whenText(opens)}.`;
+  });
+  if (c.start - H72 - Date.now() < STAY_MIN * 60e3) await runNow(true);
+  return msg;
+});
+const cancel = id => act(() => editPlan(p => { p.queue = p.queue.filter(q => q.booking_id !== id); return 'Cancelled.'; }));
+const setWeekly = (c, on) => act(() => editPlan(p => {
+  const i = p.rules.findIndex(r => matchesRule(r, c));
+  if (on && i < 0) {
+    const pt = partsOf(c.start);
+    p.rules.push({ location: c.location, day: pt.weekday, time: `${pt.hour}:${pt.minute} ${pt.dayPeriod}`, class: c.name, watch: true });
+    return `${c.name} will book itself every ${fDay.format(c.start).split(' ')[0]}.`;
+  }
+  if (!on && i >= 0) { p.rules.splice(i, 1); return 'Stopped booking it every week.'; }
+}));
+const dropRule = i => act(() => editPlan(p => { p.rules.splice(i, 1); return 'Stopped booking it every week.'; }));
+
+/* ---------- render ---------- */
+function myItems() {
+  const items = new Map();
+  for (const q of plan.queue || []) {
+    const s = (st.state || {})[q.booking_id] || {};
+    items.set(q.booking_id, { id: q.booking_id, label: q.label, start: fromNaive(q.start), oneOff: true, status: s.status, detail: s.detail });
+  }
+  for (const [id, s] of Object.entries(st.state || {})) {
+    if (items.has(id) || !s.start) continue;
+    const start = fromNaive(s.start);
+    if (start < Date.now() - 86400e3) continue;
+    items.set(id, { id, label: s.label, start, oneOff: false, status: s.status, detail: s.detail });
+  }
+  const byId = new Map(classes().map(c => [c.id, c]));
+  return [...items.values()].map(x => ({ ...x, cls: byId.get(x.id) })).sort((a, b) => a.start - b.start);
+}
+
+function renderMine() {
+  const box = $('mine'); box.replaceChildren();
+  const list = myItems().filter(x => x.start > Date.now() - 2 * 3600e3);
+  if (!list.length) { box.append(el('div', { class: 'none' }, 'Nothing booked yet. Pick a day below and tap Book it.')); return; }
+  for (const x of list) {
+    const [text, tone] = describe(x.status, x.start, x.detail);
+    const name = x.cls ? x.cls.name : x.label.split(',')[0];
+    const sub = x.cls ? `${x.cls.location}${x.cls.instructor ? `, ${x.cls.instructor}` : ''}` : x.label.split(', ').slice(1, 2).join('');
+    box.append(el('div', { class: 'card' },
+      el('div', { class: 'when' }, el('span', {}, friendlyDay(x.start)), el('b', {}, fTime.format(x.start).replace(/\s?[ap]m$/i, '')), el('span', {}, fTime.format(x.start).match(/[ap]m$/i)?.[0] || '')),
+      el('div', {}, el('div', { class: 'name' }, name), el('div', { class: 'sub' }, sub), el('div', { class: 'state ' + tone }, text)),
+      x.oneOff && !['booked', 'unsure', 'striking'].includes(x.status) ? el('button', { class: 'link', onclick: () => cancel(x.id) }, 'Cancel') : el('span')));
+  }
+}
+
+function renderPickers() {
+  const all = classes().filter(c => c.location === $('gym').value);
+  // class-type chips from what this gym actually runs
+  const counts = {};
+  for (const c of all) if (c.group) counts[c.group] = (counts[c.group] || 0) + 1;
+  const types = Object.keys(counts).sort((a, b) => counts[b] - counts[a]).slice(0, 4);
+  if (pickedType !== 'All' && !types.includes(pickedType)) pickedType = types.find(t => /reformer/i.test(t)) || 'All';
+  $('types').replaceChildren(...[...types, 'All'].map(t => el('button', { class: 'chip', 'aria-pressed': String(t === pickedType), onclick: () => { pickedType = t; store.set('type', t); renderPickers(); renderClasses(); } }, t === 'All' ? 'All classes' : t)));
+
+  const mineDays = new Set(myItems().filter(x => x.status !== 'expired').map(x => dayKey(x.start)));
+  const haveDays = new Set(all.map(c => dayKey(c.start)));
+  const days = [];
+  for (let i = 0; i < DAYS_AHEAD; i++) days.push(new Date(Date.now() + i * 86400e3));
+  if (!pickedDay || !days.some(d => dayKey(d) === pickedDay)) {
+    // start on the first day that still has a class of the chosen type
+    const first = all.filter(c => c.start > Date.now() && (pickedType === 'All' || c.group === pickedType)).sort((a, b) => a.start - b.start)[0];
+    pickedDay = first ? dayKey(first.start) : dayKey(days[0]);
+  }
+  $('days').replaceChildren(...days.map((d, i) => el('button', {
+    class: 'day' + (mineDays.has(dayKey(d)) ? ' has' : '') + (haveDays.has(dayKey(d)) ? '' : ' empty-day'),
+    'aria-pressed': String(dayKey(d) === pickedDay),
+    'aria-label': fDay.format(d) + (mineDays.has(dayKey(d)) ? ', you have a class' : ''),
+    onclick: () => { pickedDay = dayKey(d); renderPickers(); renderClasses(); },
+  }, el('span', {}, i === 0 ? 'Today' : fWk.format(d)), el('b', {}, fDate.format(d)))));
+}
+
+function renderClasses() {
+  const box = $('classes'); box.replaceChildren();
+  const gym = $('gym').value;
+  if (!(tt.gyms || []).includes(gym)) { box.append(el('div', { class: 'empty' }, `Getting ${gym}’s timetable. This takes a minute or two.`)); return; }
+  const list = classes().filter(c => c.location === gym && dayKey(c.start) === pickedDay && c.start > Date.now()
+    && (pickedType === 'All' || c.group === pickedType));
+  if (!list.length) {
+    const anyThatDay = classes().some(c => c.location === gym && dayKey(c.start) === pickedDay);
+    const isToday = pickedDay === dayKey(new Date());
+    box.append(el('div', { class: 'empty' }, isToday && !anyThatDay ? 'No more classes today.'
+      : anyThatDay ? 'No classes of this type on this day. Try All classes.'
+      : 'OP hasn’t put this day’s classes up yet. Turn on Every week for a class and it’ll book these automatically once they appear.'));
+    return;
+  }
+  const queued = new Set((plan.queue || []).map(q => q.booking_id));
+  for (const c of list) {
+    const full = (c.spots ?? 0) <= 0;
+    const status = statusOf(c.id);
+    const tooClose = c.start - Date.now() < MIN_LEAD_H * 3600e3;
+    const weeklyOn = ruleIndexFor(c) >= 0;
+    const doRow = el('div', { class: 'do' });
+    if (status === 'booked') doRow.append(el('span', { class: 'state ok' }, 'Booked'));
+    else if (queued.has(c.id) || (weeklyOn && status && !FINAL.includes(status))) {
+      const [text, tone] = describe(status, c.start);
+      doRow.append(el('span', { class: 'state ' + tone }, text));
+      if (queued.has(c.id)) doRow.append(el('button', { class: 'link', onclick: () => cancel(c.id) }, 'Cancel'));
+    } else if (tooClose) doRow.append(el('span', { class: 'hint' }, 'Under 30 hours away. Book this one in the OP app.'));
+    else {
+      const opens = new Date(c.start - H72);
+      doRow.append(el('button', { class: 'btn go', onclick: () => book(c) }, full && opens <= Date.now() ? 'Book when a spot opens' : 'Book it'),
+        el('span', { class: 'hint' }, opens <= Date.now() ? 'Booking is open now' : `Books itself ${whenText(opens)}`));
+    }
+    if (!tooClose || weeklyOn) doRow.append(el('label', { class: 'toggle' },
+      el('input', { type: 'checkbox', checked: weeklyOn, onchange: e => setWeekly(c, e.target.checked) }), 'Every week'));
+    box.append(el('div', { class: 'cls' },
+      el('div', { class: 'time' }, fTime.format(c.start)),
+      el('div', {}, el('div', { class: 'name' }, c.name),
+        el('div', { class: 'meta' }, c.instructor || '', c.instructor ? ', ' : '',
+          full ? el('span', { class: 'full' }, 'Full') : `${c.spots} of ${c.capacity} spots left`)),
+      doRow));
+  }
+}
+
+function renderRest() {
+  const r = $('rules'); r.replaceChildren();
+  const rules = plan.rules || [];
+  $('weeklyBlock').hidden = !rules.length;
+  rules.forEach((rule, i) => r.append(el('div', { class: 'rule' },
+    el('div', {}, el('div', { class: 'name' }, `${rule.class}, ${rule.location}`), el('div', { class: 'sub' }, `${rule.day} at ${rule.time}`)),
+    el('button', { class: 'link', onclick: () => dropRule(i) }, 'Stop'))));
+
+  const log = $('log'); log.replaceChildren();
+  const lines = (st.log || []).slice().reverse();
+  if (!lines.length) log.append(el('div', {}, 'Nothing has run yet.'));
+  for (const line of lines) log.append(el('div', {}, line));
+
+  const lastRun = st.last_run ? new Date(st.last_run) : null;
+  const stale = !lastRun || Date.now() - lastRun > 40 * 60e3;
+  $('pill').hidden = false;
+  $('pill').className = 'pill' + (st.error ? ' off' : stale ? ' warn' : '');
+  $('pillText').textContent = st.error ? 'Stopped' : lastRun ? `Checked ${ago(Date.now() - lastRun)}` : 'Not run yet';
+  const msg = st.error ? `${st.error} Fix it in the repo’s secrets, then tap Check for changes now.`
+    : (lastRun && Date.now() - lastRun > 90 * 60e3) ? 'No check in over 90 minutes. Open the Actions tab on GitHub and make sure the OP Sniper workflow is switched on.'
+    : !lastRun ? 'Waiting for the first check. Open Activity and settings and tap Check for changes now.' : '';
+  $('banner').hidden = !msg; $('banner').textContent = msg;
+}
+
+function renderHero() {
+  const next = myItems().filter(x => !x.status || ['armed', 'striking'].includes(x.status)).find(x => x.start - H72 > Date.now() - 5000);
+  $('hero').hidden = !next;
+  if (!next) return;
+  const ms = Math.max(0, next.start - H72 - Date.now()), sec = Math.floor(ms / 1000), pad = n => String(n).padStart(2, '0');
+  const d = Math.floor(sec / 86400), h = Math.floor(sec % 86400 / 3600);
+  const big = ms <= 0 ? 'Now' : d > 0 ? `${d}d ${h}h` : `${h}:${pad(Math.floor(sec % 3600 / 60))}:${pad(sec % 60)}`;
+  $('count').replaceChildren(...[big, ms > 0 && d === 0 ? el('small', {}, 'to go') : null].filter(Boolean));
+  $('heroTitle').textContent = next.label;
+  $('heroSub').textContent = `Booking opens ${fWhenSec.format(new Date(next.start - H72))}. You don’t need this page open.`;
+}
+
+function render() { renderMine(); renderPickers(); renderClasses(); renderRest(); renderHero(); }
+
+async function refresh() {
+  try {
+    [plan, tt, st] = await Promise.all([getVar('OP_PLAN', {}), getVar('OP_TIMETABLE', { rows: [], gyms: [] }), getVar('OP_STATE', { state: {}, log: [] })]);
+    plan.queue ||= []; plan.rules ||= []; plan.gyms ||= ['Zetland'];
+    if (!$('gym').dataset.ready) { $('gym').value = plan.gyms[0] || 'Zetland'; $('gym').dataset.ready = '1'; }
+    render();
+  } catch (e) {
+    if (e instanceof AuthErr) return lock(e.message);
+    $('banner').hidden = false; $('banner').textContent = e.message;
+  }
+}
+
+function lock(msg) {
+  $('app').hidden = true; $('pill').hidden = true; $('unlock').hidden = false;
+  $('unlockErr').hidden = !msg; $('unlockErr').textContent = msg || '';
+}
+let started = false;
+async function start() {
+  $('unlock').hidden = true; $('app').hidden = false;
+  await refresh();
+  if (!started) { started = true; setInterval(refresh, 30000); setInterval(renderHero, 1000); }
+}
+
+function boot() {
+  if (!REPO) return lock('Open this page from your github.io address.');
+  $('gym').replaceChildren(...GYMS.map(g => el('option', { value: g }, g)));
+  $('gym').addEventListener('change', () => act(async () => {
+    const gym = $('gym').value; pickedType = 'Reformer'; render();
+    if ((plan.gyms || [])[0] === gym) return;
+    await editPlan(p => { p.gyms = [gym]; });
+    await runNow(true);
+    return `Getting ${gym}’s timetable.`;
+  }));
+  $('checkNow').addEventListener('click', () => act(async () => { await runNow(); return 'Checking now. Give it about a minute.'; }));
+  $('forget').addEventListener('click', () => { store.set('token', null); token = null; lock(); });
+  $('unlockForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    token = $('tokenInput').value.trim();
+    if (!token) return;
+    try { await getVar('OP_PLAN', null); store.set('token', token); $('tokenInput').value = ''; start(); }
+    catch (err) { lock(err.message); }
+  });
+  token ? start() : lock();
+}
+boot();
+</script>
+</body>
+</html>
